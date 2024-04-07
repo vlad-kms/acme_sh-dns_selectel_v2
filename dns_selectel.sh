@@ -2,6 +2,7 @@
 
 #
 #SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
+#SL_Ver="v1"
 #
 
 SL_Api="https://api.selectel.ru/domains/v1"
