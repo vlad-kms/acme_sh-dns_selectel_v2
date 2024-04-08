@@ -3,11 +3,11 @@
 #
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
 #export SL_Ver="v1"
-#export SL_Expire=60
-#export SL_Login=60
-#export SL_Login_ID=60
-#export SL_Project=60
-#export SL_Pswd=pswd
+#export SL_Expire=60        - время жизни token в минутах, по-умолчанию: 60 минут
+#export SL_Login_name=''    - имя сервисного пользователя, например: dns
+#export SL_Login_ID=''      - id пользователя ( не сервисного), например: 218200
+#export SL_Project_Name=''  - имя проекта, например: dns_t_mrovo_ru
+#export SL_Pswd='pswd'      - пароль сервисного пользователя, например: пароль
 #
 
 SL_Api="https://api.selectel.ru/domains"
@@ -21,17 +21,9 @@ dns_selectel_add() {
   fulldomain=$1
   txtvalue=$2
 
-  SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
-
-  if [ -z "$SL_Key" ]; then
-    SL_Key=""
-    _err "You don't specify selectel.ru api key yet."
-    _err "Please create you key and try again."
+  if ! _sl_init_vars; then
     return 1
   fi
-
-  #save the api key to the account conf file.
-  _saveaccountconf_mutable SL_Key "$SL_Key"
 
   _debug "First detect the root zone"
   if ! _get_root "$fulldomain"; then
@@ -150,17 +142,6 @@ _sl_rest() {
   data="$3"
   _debug "$ep"
 
-  SL_Ver="${SL_Ver:-$(_readaccountconf_mutable SL_Ver)}"
-
-  if [ -z "$SL_Ver" ]; then
-    SL_Ver=""
-    _err "You don't specify selectel.ru API version yet."
-    _err "Please specify you API version and try again."
-    return 1
-  fi
-
-  _saveaccountconf_mutable SL_Ver "$SL_Ver"
-
   export _H1="X-Token: $SL_Key"
   export _H2="Content-Type: application/json"
 
@@ -176,5 +157,94 @@ _sl_rest() {
     return 1
   fi
   _debug2 response "$response"
+  return 0
+}
+
+_sl_init_vars() {
+
+  _debug "First init variables"
+  # version API
+  SL_Ver="${SL_Ver:-$(_readaccountconf_mutable SL_Ver)}"
+  if [ -z "$SL_Ver" ]; then
+    SL_Ver=""
+    _err "You don't specify selectel.ru API version yet."
+    _err "Please specify you API version and try again."
+    return 1
+  fi
+  #_saveaccountconf_mutable SL_Ver "$SL_Ver"
+ _debug2 SL_Ver "$SL_Ver"
+ 
+  if [[ "$SL_Ver" == "v1" ]]; then
+    # token
+    SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
+
+    if [ -z "$SL_Key" ]; then
+      SL_Key=""
+      _err "You don't specify selectel.ru api key yet."
+      _err "Please create you key and try again."
+      return 1
+    fi
+    #save the api key to the account conf file.
+    _saveaccountconf_mutable SL_Key "$SL_Key"
+  elif [[ "$SL_Ver" == "v2" ]]; then
+    # time expire token
+    SL_Expire="${SL_Expire:-$(_readaccountconf_mutable SL_Expire)}"
+    def_str=''
+    if [ -z "$SL_Expire" ]; then
+      def_str=' (use default)'
+      SL_Expire=1400 # 23h 20 min
+    fi
+    _saveaccountconf_mutable SL_Expire "$SL_Expire"
+    _debug2 SL_Expire "$SL_Expire"
+    # login service user
+    SL_Login_Name="${SL_Login_Name:-$(_readaccountconf_mutable SL_Login_Name)}"
+    if [ -z "$SL_Login_Name" ]; then
+      SL_Login_Name=''
+      _err "You did not specify the selectel.ru API service user name."
+      _err "Please provide a service user name and try again."
+      return 1
+    fi
+    _saveaccountconf_mutable SL_Login_Name "$SL_Login_Name"
+    _debug2 SL_Login_Name "$SL_Login_Name"
+    # user ID
+    SL_Login_ID="${SL_Login_ID:-$(_readaccountconf_mutable SL_Login_ID)}"
+    if [ -z "$SL_Login_ID" ]; then
+      SL_Login_ID=''
+      _err "You did not specify the selectel.ru API user ID."
+      _err "Please provide a user ID and try again."
+      return 1
+    fi
+    _saveaccountconf_mutable SL_Login_ID "$SL_Login_ID"
+    _debug2 SL_Login_ID "$SL_Login_ID"
+    # project name
+    SL_Project_Name="${SL_Project_Name:-$(_readaccountconf_mutable SL_Project_Name)}"
+    if [ -z "$SL_Project_Name" ]; then
+      SL_Project_Name=''
+      _err "You did not specify the project name."
+      _err "Please provide a project name and try again."
+      return 1
+    fi
+    _saveaccountconf_mutable SL_Project_Name "$SL_Project_Name"
+    _debug2 SL_Project_Name "$SL_Project_Name"
+    # service user password
+    SL_Pswd="${SL_Pswd:-$(_readaccountconf_mutable SL_Pswd)}"
+    if [ -z "$SL_Pswd" ]; then
+      SL_Pswd=''
+      _err "You did not specify the service user password."
+      _err "Please provide a service user password and try again."
+      return 1
+    fi
+    _saveaccountconf_mutable SL_Pswd "$SL_Pswd"
+    _debug2 SL_Pswd "$SL_Pswd"
+    return 1
+  else
+    SL_Ver=""
+    _err "You also specified the wrong version of the selectel.ru API."
+    _err "Please provide the correct API version and try again."
+    return 1
+  fi
+
+  _saveaccountconf_mutable SL_Ver "$SL_Ver"
+
   return 0
 }
