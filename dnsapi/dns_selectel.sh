@@ -1,11 +1,18 @@
 #!/usr/bin/bash
 
 #
-#SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
-#SL_Ver="v1"
+#export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
+#export SL_Ver="v1"
+#export SL_Expire=60
+#export SL_Login=60
+#export SL_Login_ID=60
+#export SL_Project=60
+#export SL_Pswd=pswd
 #
 
-SL_Api="https://api.selectel.ru/domains/v1"
+SL_Api="https://api.selectel.ru/domains"
+
+auth_uri="https://cloud.api.selcloud.ru/identity/v3/auth/tokens"
 
 ########  Public functions #####################
 
@@ -143,14 +150,25 @@ _sl_rest() {
   data="$3"
   _debug "$ep"
 
+  SL_Ver="${SL_Ver:-$(_readaccountconf_mutable SL_Ver)}"
+
+  if [ -z "$SL_Ver" ]; then
+    SL_Ver=""
+    _err "You don't specify selectel.ru API version yet."
+    _err "Please specify you API version and try again."
+    return 1
+  fi
+
+  _saveaccountconf_mutable SL_Ver "$SL_Ver"
+
   export _H1="X-Token: $SL_Key"
   export _H2="Content-Type: application/json"
 
   if [ "$m" != "GET" ]; then
     _debug data "$data"
-    response="$(_post "$data" "$SL_Api/$ep" "" "$m")"
+    response="$(_post "$data" "$SL_Api/$SL_Ver/$ep" "" "$m")"
   else
-    response="$(_get "$SL_Api/$ep")"
+    response="$(_get "$SL_Api/$SL_Ver/$ep")"
   fi
 
   if [ "$?" != "0" ]; then

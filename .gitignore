@@ -1,4 +1,4 @@
 *
 !.gitignore
 !README.md
-!dns_selectel.sh
+!dnsapi/dns_selectel.sh
