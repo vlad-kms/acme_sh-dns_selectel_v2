@@ -28,6 +28,7 @@ dns_selectel_add() {
     return 1
   fi
   _debug2 SL_Ver "$SL_Ver"
+  _secure_debug3 SL_Key "$SL_Key"
   _debug2 SL_Expire "$SL_Expire"
   _debug2 SL_Login_Name "$SL_Login_Name"
   _debug2 SL_Login_ID "$SL_Login_ID"
@@ -47,8 +48,9 @@ dns_selectel_add() {
     _ext_uri="/zones/$_domain_id/rrset"
     _text_tmp=$(echo $txtvalue | sed -En "s/[\"]*([^\"]*)/\1/p")
     _debug txtvalue "$txtvalue"
+    _text_tmp='\"'$_text_tmp'\"'
     _debug _text_tmp "$_text_tmp"
-    _data="{\"type\": \"TXT\", \"ttl\": 60, \"name\": \"${fulldomain}.\", \"records\": [{\"content\":$_text_tmp}]}"
+    _data="{\"type\": \"TXT\", \"ttl\": 60, \"name\": \"${fulldomain}.\", \"records\": [{\"content\":\"$_text_tmp\"}]}"
   elif [[ "$SL_Ver" == "v1" ]]; then
     _ext_uri="/$_domain_id/records/"
     _data="{\"type\":\"TXT\",\"ttl\":60,\"name\":\"$fulldomain\",\"content\":\"$txtvalue\"}"
@@ -61,9 +63,9 @@ dns_selectel_add() {
   _debug3 _data "$_data"
 
   if _sl_rest POST "$_ext_uri" "$_data"; then
-    if _contains "$response" "$txtvalue" || _contains "$response" "record_already_exists"; then
+    if _contains "$response" "$txtvalue" || _contains "$response" "already_exists"; then
       _info "Added, OK"
-      return 1
+      return 0
     fi
   fi
   _err "Add txt record error."
@@ -75,14 +77,16 @@ dns_selectel_rm() {
   fulldomain=$1
   txtvalue=$2
 
-  SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
-
-  if [ -z "$SL_Key" ]; then
-    SL_Key=""
-    _err "You don't specify slectel api key yet."
-    _err "Please create you key and try again."
+  #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
+  if ! _sl_init_vars; then
     return 1
   fi
+  _debug2 SL_Ver "$SL_Ver"
+  _secure_debug3 SL_Key "$SL_Key"
+  _debug2 SL_Expire "$SL_Expire"
+  _debug2 SL_Login_Name "$SL_Login_Name"
+  _debug2 SL_Login_ID "$SL_Login_ID"
+  _debug2 SL_Project_Name "$SL_Project_Name"
 
   _debug "First detect the root zone"
   if ! _get_root "$fulldomain"; then
