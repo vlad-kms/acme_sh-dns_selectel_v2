@@ -78,7 +78,7 @@ dns_selectel_rm() {
   txtvalue=$2
 
   #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
-  if ! _sl_init_vars; then
+  if ! _sl_init_vars "nosave"; then
     return 1
   fi
   _debug2 SL_Ver "$SL_Ver"
@@ -98,14 +98,31 @@ dns_selectel_rm() {
   _debug _domain "$_domain"
 
   _debug "Getting txt records"
-  _sl_rest GET "/${_domain_id}/records/"
+  if [[ "$SL_Ver" == "v2" ]]; then
+    _ext_uri="/zones/$_domain_id/rrset/"
+  elif [[ "$SL_Ver" == "v1" ]]; then
+    _ext_uri="/$_domain_id/records/"
+  else
+    #not valid
+    _err "Error. Unsupported version API $SL_Ver"
+    return 1
+  fi
+  _sl_rest GET "${_ext_uri}"
 
   if ! _contains "$response" "$txtvalue"; then
     _err "Txt record not found"
     return 1
   fi
 
-  _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
+  if [[ "$SL_Ver" == "v2" ]]; then
+    _record_seg="$(echo "$response" | _egrep_o "[^{]*\"id\"[^}]*\"$txtvalue\"[^}]*}")"
+  elif [[ "$SL_Ver" == "v1" ]]; then
+    _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
+  else
+    #not valid
+    _err "Error. Unsupported version API $SL_Ver"
+    return 1
+  fi
   _debug2 "_record_seg" "$_record_seg"
   if [ -z "$_record_seg" ]; then
     _err "can not find _record_seg"
