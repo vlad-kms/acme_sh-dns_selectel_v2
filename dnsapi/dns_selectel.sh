@@ -115,7 +115,12 @@ dns_selectel_rm() {
   fi
 
   if [[ "$SL_Ver" == "v2" ]]; then
-    _record_seg="$(echo "$response" | _egrep_o "[^{]*\"id\"[^}]*\"$txtvalue\"[^}]*}")"
+    _debug txtvalue "$txtvalue"
+    _text_tmp=$(echo $txtvalue | sed -En "s/[\"]*([^\"]*)/\1/p")
+    _text_tmp='\"'$_text_tmp'\"'
+    _debug _text_tmp "$_text_tmp"
+    _record_seg="$(echo "$response" | _egrep_o ".*\{(\"id\"[^}]*($text_tmp)[^}]*}[^}]*}).*")"
+    #_record_seg="$(echo $r | sed -En "s/.*\{(\"id\"[^}]*($text_tmp)[^}]*}[^}]*}).*/\1/p")"
   elif [[ "$SL_Ver" == "v1" ]]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
   else
@@ -185,7 +190,7 @@ _get_root() {
     return 1
   elif [[ "$SL_Ver" == "v2" ]]; then
     # version API 2
-    _ext_uri='zones/'
+    _ext_uri='/zones/'
     domain="${domain}."
     _debug "domain:: " "$domain"
     # read records of all domains
@@ -248,15 +253,15 @@ _sl_rest() {
   fi
   export _H1="${_h1_name}: ${_token}"
   export _H2="Content-Type: application/json"
-  _debug3 "Full URI: " "$SL_Api/$SL_Ver/$ep"
+  _debug3 "Full URI: " "$SL_Api/${SL_Ver}${ep}"
   _debug3 "_H1:" "$_H1"
   _debug3 "_H2:" "$_H2"
 
   if [ "$m" != "GET" ]; then
     _debug data "$data"
-    response="$(_post "$data" "$SL_Api/$SL_Ver/$ep" "" "$m")"
+    response="$(_post "$data" "$SL_Api/${SL_Ver}${ep}" "" "$m")"
   else
-    response="$(_get "$SL_Api/$SL_Ver/$ep")"
+    response="$(_get "$SL_Api/${SL_Ver}${ep}")"
   fi
 
   if [ "$?" != "0" ]; then
