@@ -97,16 +97,21 @@ dns_selectel_rm() {
   _debug _sub_domain "$_sub_domain"
   _debug _domain "$_domain"
 
-  _debug "Getting txt records"
   if [[ "$SL_Ver" == "v2" ]]; then
-    _ext_uri="/zones/$_domain_id/rrset/"
+    _ext_srv1="/zones/"
+    _ext_srv2="/rrset/"
   elif [[ "$SL_Ver" == "v1" ]]; then
-    _ext_uri="/$_domain_id/records/"
+    _ext_srv1="/"
+    _ext_srv2="/records/"
   else
     #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
+
+  _debug "Getting txt records"
+  _ext_uri="${_ext_srv1}$_domain_id${_ext_srv2}"
+  _debug3 _ext_uri "$_ext_uri"
   _sl_rest GET "${_ext_uri}"
 
   if ! _contains "$response" "$txtvalue"; then
@@ -115,36 +120,43 @@ dns_selectel_rm() {
   fi
 
   if [[ "$SL_Ver" == "v2" ]]; then
-    _debug txtvalue "$txtvalue"
-    _text_tmp=$(echo $txtvalue | sed -En "s/[\"]*([^\"]*)/\1/p")
-    _text_tmp='\"'$_text_tmp'\"'
-    _debug _text_tmp "$_text_tmp"
-    _record_seg="$(echo "$response" | _egrep_o ".*\{(\"id\"[^}]*($text_tmp)[^}]*}[^}]*}).*")"
-    #_record_seg="$(echo $r | sed -En "s/.*\{(\"id\"[^}]*($text_tmp)[^}]*}[^}]*}).*/\1/p")"
+    _record_seg="$(echo "$response" | sed -En "s/.*\{(\"id\"[^}]*($txtvalue)[^}]*}[^}]*}).*/\1/p")"
+    # record id
+    #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [[ "$SL_Ver" == "v1" ]]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
+    # record id
+    #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   else
     #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
-  _debug2 "_record_seg" "$_record_seg"
+  _debu3 "_record_seg" "$_record_seg"
   if [ -z "$_record_seg" ]; then
     _err "can not find _record_seg"
     return 1
   fi
-
+  # record id
   _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
-  _debug2 "_record_id" "$_record_id"
   if [ -z "$_record_id" ]; then
     _err "can not find _record_id"
     return 1
   fi
+  # delete starts and ends '"'
+  _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
+  _debug3 "_record_id" "$_record_id"
 
-  if ! _sl_rest DELETE "/$_domain_id/records/$_record_id"; then
-    _err "Delete record error."
-    return 1
-  fi
+  # delete all record type TXT with text $txtvalue
+  for _one_id in $_record_id; do
+    _del_uri="${_ext_uri}${_one_id}"
+    _debug2 _ext_uri "$_del_uri"
+    if ! _sl_rest DELETE "${_del_uri}"; then
+      _err "Delete record error: ${_del_uri}."
+    else
+      info "Delete record success: ${_del_uri}."
+    fi
+  done
   return 0
 }
 
