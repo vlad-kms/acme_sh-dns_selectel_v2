@@ -1,5 +1,21 @@
 #!/usr/bin/bash
 
+# Протестировано:
+#   Исходные данные:
+#     intev.ru - зарегистрированный домен в legacy v1
+#     t.mrovo.ru - зарегистрированный домен в actual v2
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+#
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias t.mrovo.ru --dns dns_selectel
+
 #
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
 #export SL_Ver="v1"
@@ -11,9 +27,7 @@
 #
 
 SL_Api="https://api.selectel.ru/domains"
-
 auth_uri="https://cloud.api.selcloud.ru/identity/v3/auth/tokens"
-
 _sl_sep='#'
 
 ########  Public functions #####################
@@ -45,27 +59,90 @@ dns_selectel_add() {
 
   _info "Adding record"
   if [[ "$SL_Ver" == "v2" ]]; then
-    _ext_uri="/zones/$_domain_id/rrset"
+    _ext_srv1="/zones/"
+    _ext_srv2="/rrset/"
     _text_tmp=$(echo $txtvalue | sed -En "s/[\"]*([^\"]*)/\1/p")
     _debug txtvalue "$txtvalue"
     _text_tmp='\"'$_text_tmp'\"'
     _debug _text_tmp "$_text_tmp"
     _data="{\"type\": \"TXT\", \"ttl\": 60, \"name\": \"${fulldomain}.\", \"records\": [{\"content\":\"$_text_tmp\"}]}"
   elif [[ "$SL_Ver" == "v1" ]]; then
-    _ext_uri="/$_domain_id/records/"
+    _ext_srv1="/"
+    _ext_srv2="/records/"
     _data="{\"type\":\"TXT\",\"ttl\":60,\"name\":\"$fulldomain\",\"content\":\"$txtvalue\"}"
   else
     #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
+  _ext_uri="${_ext_srv1}$_domain_id${_ext_srv2}"
   _debug3 _ext_uri "$_ext_uri"
   _debug3 _data "$_data"
 
   if _sl_rest POST "$_ext_uri" "$_data"; then
-    if _contains "$response" "$txtvalue" || _contains "$response" "already_exists"; then
-      _info "Added, OK"
-      return 0
+    if _contains "$response" "$txtvalue"; then
+        _info "Added, OK"
+        return 0
+    fi
+    if _contains "$response" "already_exists"; then
+      if [[ "$SL_Ver" == "v2" ]]; then
+        # надо добавить к существующей записи еще один content
+        # 1) найти и считать запись $fulldomain
+        #     {
+        #       "id":"300223f5-0a37-49c5-a44e-5294108a93b4","name":"tt1.t.mrovo.ru.","ttl":3600,"type":"TXT",
+        #       "records":[
+        #         {"content":"\"text2\"","disabled":false},
+        #         {"content":"\"text1\"","disabled":false}
+        #       ],
+        #       "comment":null,"managed_by":null,"zone_id":"70d5d06b-1957-4e6c-ab3e-a31dd5cde10c"
+        #     }
+        # 2) добавить новую подзапись в нее
+        #     {
+        #       "id":"300223f5-0a37-49c5-a44e-5294108a93b4","name":"tt1.t.mrovo.ru.","ttl":3600,"type":"TXT",
+        #       "records":[
+        #         {"content":"\"text2\"","disabled":false},
+        #         {"content":"\"text1\"","disabled":false},
+        #         {"content":"\"${txtvalue}\"","disabled":false}
+        #       ],
+        #       "comment":null,"managed_by":null,"zone_id":"70d5d06b-1957-4e6c-ab3e-a31dd5cde10c"
+        #     }
+        # считали записи rrset
+        _debug "Getting txt records"
+        _sl_rest GET "${_ext_uri}"
+        # проверить существование записи с именем $fulldomain. Вообще-то излишне, но вдруг...
+        #if ! _contains "$response" "$fulldomain"; then
+        #  _err "Txt record ${fulldomain} not found"
+        #  return 1
+        #fi
+        # Если в данной записи, есть текстовое значение $txtvalue,
+        # то все хорошо, добавлять ничего не надо и результат успешный
+        if _contains "$response" "$txtvalue"; then
+          _info "Added, OK"
+          _info "Txt record ${fulldomain} со значением ${txtvalue} already exists"
+          return 0
+        fi
+        # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
+        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*$fulldomain[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
+        _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*$fulldomain[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
+        # record id
+        _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
+        # delete starts and ends '"'
+        _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
+        _tmp_str="${_record_array},{\"content\":\"${_text_tmp}\"}"
+        _data="{\"ttl\": 60, \"records\": [${_tmp_str}]}"
+        _debug3 _record_seg "$_record_seg"
+        _debug3 _record_array "$_record_array"
+        _debug3 _record_array "$_record_id"
+        _debug3 _data "$_data"
+        # вызов REST API PATCH
+        if _sl_rest PATCH "${_ext_uri}${_record_id}" "$_data"; then
+          _info "Added, OK"
+          return 0
+        fi
+      elif [[ "$SL_Ver" == "v1" ]]; then
+        _info "Added, OK"
+        return 0
+      fi
     fi
   fi
   _err "Add txt record error."
@@ -74,6 +151,10 @@ dns_selectel_add() {
 
 #fulldomain txtvalue
 dns_selectel_rm() {
+  #TODO пока для версии v2 (actual) удаляет за один раз всю группу записи _acme-callenge.domain ($fulldomain)
+  #TODO т.е. если на другом сервере одновременно создал запись с таким же именем, то могут быть коллизии
+  #TODO надо реализовать удаление одной записи из records:[{content="\"text1\""},{content="\"text2\""},...]
+  # это не критично, т.к. вероятность такая очень мала
   fulldomain=$1
   txtvalue=$2
 
@@ -120,7 +201,7 @@ dns_selectel_rm() {
   fi
 
   if [[ "$SL_Ver" == "v2" ]]; then
-    _record_seg="$(echo "$response" | sed -En "s/.*\{(\"id\"[^}]*($txtvalue)[^}]*}[^}]*}).*/\1/p")"
+    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*$txtvalue[^]]*\])[^}]*}).*/\1--\2/p")"
     # record id
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [[ "$SL_Ver" == "v1" ]]; then
@@ -132,7 +213,7 @@ dns_selectel_rm() {
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
-  _debu3 "_record_seg" "$_record_seg"
+  _debug3 "_record_seg" "$_record_seg"
   if [ -z "$_record_seg" ]; then
     _err "can not find _record_seg"
     return 1
