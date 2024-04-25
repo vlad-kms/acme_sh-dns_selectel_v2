@@ -1,5 +1,6 @@
 *
 !.gitignore
 !README.md
+!dnsapi
 !dnsapi/dns_selectel.sh
 !.gitattributes
