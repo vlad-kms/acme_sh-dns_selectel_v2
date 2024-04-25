@@ -1,20 +1,20 @@
 #!/usr/bin/bash
 
-# Протестировано:
+# Протестировано (примеры):
 #   Исходные данные:
-#     intev.ru - зарегистрированный домен в legacy v1
-#     t.mrovo.ru - зарегистрированный домен в actual v2
-# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+#     dv1.ru - зарегистрированный домен в legacy v1
+#     t.dv2.ru - зарегистрированный домен в actual v2
+# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --domain-alias test11.dv1.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --challenge-alias dv1.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
 #
-# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --domain-alias ta1.t.dv2.ru --dns dns_selectel
 
 #
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
