@@ -122,8 +122,8 @@ dns_selectel_add() {
           return 0
         fi
         # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
-        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*$fulldomain[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
-        _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*$fulldomain[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
+        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
+        _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
         # record id
         _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
         # delete starts and ends '"'
@@ -201,7 +201,7 @@ dns_selectel_rm() {
   fi
 
   if [ "$SL_Ver" = "v2" ]; then
-    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*$txtvalue[^]]*\])[^}]*}).*/\1--\2/p")"
+    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*${txtvalue}[^]]*\])[^}]*}).*/\1--\2/p")"
     # record id
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [ "$SL_Ver" = "v1" ]; then
@@ -396,9 +396,9 @@ _get_auth_token() {
       
       # check the validity of the token for the user and the project and its lifetime
       #_dt_diff_minute=$(( ( $(EPOCHSECONDS)-$_receipt_time )/60 ))
-      _dt_diff_minute=$(( ( $(date +%s)-$_receipt_time )/60 ))
+      _dt_diff_minute=$(( ( $(date +%s)-_receipt_time )/60 ))
       _debug3 _dt_diff_minute "$_dt_diff_minute"
-      (( $_dt_diff_minute > $SL_Expire )) && unset _token_keystone
+      [ "$_dt_diff_minute" -gt "$SL_Expire" ] && unset _token_keystone
       if [ "$_project_name" != "$SL_Project_Name" ] || [ "$_login_name" != "$SL_Login_Name" ] || [ "$_login_id" != "$SL_Login_ID" ]; then
         unset _token_keystone
       fi
