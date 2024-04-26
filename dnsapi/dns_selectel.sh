@@ -16,13 +16,13 @@
 # export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
 # export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --domain-alias ta1.t.dv2.ru --dns dns_selectel
 
-#
+# переменные, которые должны быть определены перед запуском скрипта
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
-#export SL_Ver="v1"
-#export SL_Expire=60        - время жизни token в минутах, по-умолчанию: 60 минут
-#export SL_Login_name=''    - имя сервисного пользователя, например: dns
-#export SL_Login_ID=''      - id пользователя ( не сервисного), например: 218200
+#export SL_Ver="v1"         - версия API: 'v2' (actual) или 'v1' (legacy)
+#export SL_Expire=60        - время жизни token в минутах (0-1440), по-умолчанию: 60 минут
+#export SL_Login_ID=''      - id пользователя (не сервисного), например: 218200
 #export SL_Project_Name=''  - имя проекта, например: dns_t_mrovo_ru
+#export SL_Login_name=''    - имя сервисного пользователя, например: dns
 #export SL_Pswd='pswd'      - пароль сервисного пользователя, например: пароль
 #
 
