@@ -109,7 +109,7 @@ dns_selectel_add() {
         # считали записи rrset
         _debug "Getting txt records"
         _sl_rest GET "${_ext_uri}"
-        # проверить существование записи с именем $fulldomain. Вообще-то излишне, но вдруг...
+        # проверить существование записи с именем $fulldomain. Вообще-то излишне, но вдруг
         #if ! _contains "$response" "$fulldomain"; then
         #  _err "Txt record ${fulldomain} not found"
         #  return 1
@@ -368,13 +368,15 @@ _sl_rest() {
 }
 
 #################################################################3
-# use: 
+# use:
 _get_auth_token() {
   if [ "$SL_Ver" = 'v1' ]; then
     # token for v1
+    _debug "Token v1"
     _token_keystone=$SL_Key
   elif [ "$SL_Ver" = 'v2' ]; then
     # token for v2. Get a token for calling the API
+    _debug "Keystone Token v2"
     token_v2=$(_readaccountconf_mutable SL_Token_V2)
     if [ -n "$token_v2" ]; then
       # The structure with the token was considered. Let's check its validity
@@ -393,7 +395,6 @@ _get_auth_token() {
       _debug3 _login_id "$_login_id"
       _debug3 _project_name "$_project_name"
       _debug3 _receipt_time "$(date -d @"$_receipt_time" -u)"
-      
       # check the validity of the token for the user and the project and its lifetime
       #_dt_diff_minute=$(( ( $(EPOCHSECONDS)-$_receipt_time )/60 ))
       _dt_diff_minute=$(( ( $(date +%s)-_receipt_time )/60 ))
@@ -402,10 +403,11 @@ _get_auth_token() {
       if [ "$_project_name" != "$SL_Project_Name" ] || [ "$_login_name" != "$SL_Login_Name" ] || [ "$_login_id" != "$SL_Login_ID" ]; then
         unset _token_keystone
       fi
+      _debug "Get exists token"
     fi
     if [ -z "$_token_keystone" ]; then
       # the previous token is incorrect or was not received, get a new one
-      _debug "Update token"
+      _debug "Update (get new) token"
       _data_auth="{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"name\":\"${SL_Login_Name}\",\"domain\":{\"name\":\"${SL_Login_ID}\"},\"password\":\"${SL_Pswd}\"}}},\"scope\":{\"project\":{\"name\":\"${SL_Project_Name}\",\"domain\":{\"name\":\"${SL_Login_ID}\"}}}}}"
       #_secure_debug2 "_data_auth" "$_data_auth"
       export _H1="Content-Type: application/json"
@@ -441,7 +443,7 @@ _sl_init_vars() {
     return 1
   fi
   _debug2 SL_Ver "$SL_Ver"
- 
+
   if [ "$SL_Ver" = "v1" ]; then
     # token
     SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
