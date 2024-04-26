@@ -2,19 +2,19 @@
 
 # Протестировано (примеры):
 #   Исходные данные:
-#     dv1.ru - зарегистрированный домен в legacy v1
-#     t.dv2.ru - зарегистрированный домен в actual v2
-# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --domain-alias test11.dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --challenge-alias dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
+#     intev.ru - зарегистрированный домен в legacy v1
+#     t.mrovo.ru - зарегистрированный домен в actual v2
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
 #
-# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --domain-alias ta1.t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
 
 # переменные, которые должны быть определены перед запуском скрипта
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
@@ -157,7 +157,6 @@ dns_selectel_rm() {
   # это не критично, т.к. вероятность такая очень мала
   fulldomain=$1
   txtvalue=$2
-
   #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
   if ! _sl_init_vars "nosave"; then
     return 1
@@ -168,7 +167,7 @@ dns_selectel_rm() {
   _debug2 SL_Login_Name "$SL_Login_Name"
   _debug2 SL_Login_ID "$SL_Login_ID"
   _debug2 SL_Project_Name "$SL_Project_Name"
-
+  #
   _debug "First detect the root zone"
   if ! _get_root "$fulldomain"; then
     _err "invalid domain"
@@ -177,7 +176,7 @@ dns_selectel_rm() {
   _debug _domain_id "$_domain_id"
   _debug _sub_domain "$_sub_domain"
   _debug _domain "$_domain"
-
+  #
   if [ "$SL_Ver" = "v2" ]; then
     _ext_srv1="/zones/"
     _ext_srv2="/rrset/"
@@ -189,17 +188,17 @@ dns_selectel_rm() {
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
-
+  #
   _debug "Getting txt records"
   _ext_uri="${_ext_srv1}$_domain_id${_ext_srv2}"
   _debug3 _ext_uri "$_ext_uri"
   _sl_rest GET "${_ext_uri}"
-
+  #
   if ! _contains "$response" "$txtvalue"; then
     _err "Txt record not found"
     return 1
   fi
-
+  #
   if [ "$SL_Ver" = "v2" ]; then
     _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*${txtvalue}[^]]*\])[^}]*}).*/\1--\2/p")"
     # record id
@@ -227,7 +226,6 @@ dns_selectel_rm() {
   # delete starts and ends '"'
   _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
   _debug3 "_record_id" "$_record_id"
-
   # delete all record type TXT with text $txtvalue
   for _one_id in $_record_id; do
     _del_uri="${_ext_uri}${_one_id}"
@@ -249,7 +247,7 @@ dns_selectel_rm() {
 # _domain_id=sdjkglgdfewsdfg
 _get_root() {
   domain=$1
-
+  #
   if [ "$SL_Ver" = 'v1' ]; then
     # version API 1
     if ! _sl_rest GET "/"; then
