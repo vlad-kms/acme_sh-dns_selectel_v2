@@ -368,7 +368,7 @@ _sl_rest() {
 }
 
 #################################################################3
-# use: 
+# use:
 _get_auth_token() {
   if [ "$SL_Ver" = 'v1' ]; then
     # token for v1
@@ -443,7 +443,7 @@ _sl_init_vars() {
     return 1
   fi
   _debug2 SL_Ver "$SL_Ver"
- 
+
   if [ "$SL_Ver" = "v1" ]; then
     # token
     SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
