@@ -81,8 +81,8 @@ dns_selectel_add() {
 
   if _sl_rest POST "$_ext_uri" "$_data"; then
     if _contains "$response" "$txtvalue"; then
-        _info "Added, OK"
-        return 0
+      _info "Added, OK"
+      return 0
     fi
     if _contains "$response" "already_exists"; then
       if [ "$SL_Ver" = "v2" ]; then
@@ -122,7 +122,7 @@ dns_selectel_add() {
           return 0
         fi
         # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
-        _record_seg="$(echo "$response"   | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
+        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
         _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
         # record id
         _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
@@ -293,7 +293,7 @@ _get_root() {
         _domain=$h
         _debug "Getting domain id for $h"
         if ! _sl_rest GET "/$h"; then
-        _err "Error read records of all domains $SL_Ver"
+          _err "Error read records of all domains $SL_Ver"
           return 1
         fi
         _domain_id="$(echo "$response" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\":" | cut -d : -f 2)"
@@ -311,7 +311,7 @@ _get_root() {
     _debug "domain:: " "$domain"
     # read records of all domains
     if ! _sl_rest GET "$_ext_uri"; then
-        #not valid
+      #not valid
       _err "Error read records of all domains $SL_Ver"
       return 1
     fi
@@ -418,7 +418,7 @@ _get_auth_token() {
       _debug3 _receipt_time "$(date -d @"$_receipt_time" -u)"
       # check the validity of the token for the user and the project and its lifetime
       #_dt_diff_minute=$(( ( $(EPOCHSECONDS)-$_receipt_time )/60 ))
-      _dt_diff_minute=$(( ( $(date +%s)-_receipt_time )/60 ))
+      _dt_diff_minute=$((($(date +%s) - _receipt_time) / 60))
       _debug3 _dt_diff_minute "$_dt_diff_minute"
       [ "$_dt_diff_minute" -gt "$SL_Expire" ] && unset _token_keystone
       if [ "$_project_name" != "$SL_Project_Name" ] || [ "$_login_name" != "$SL_Login_Name" ] || [ "$_login_id" != "$SL_Login_ID" ]; then
@@ -452,7 +452,7 @@ _get_auth_token() {
 # use: [non_save]
 _sl_init_vars() {
   _non_save="${1}"
- _debug2 _non_save "$_non_save"
+  _debug2 _non_save "$_non_save"
 
   _debug "First init variables"
   # version API
