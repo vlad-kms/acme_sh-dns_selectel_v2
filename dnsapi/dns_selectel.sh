@@ -4,21 +4,21 @@
 #   Исходные данные:
 #     intev.ru - зарегистрированный домен в legacy v1
 #     t.mrovo.ru - зарегистрированный домен в actual v2
-# export SL_VER=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
-# export SL_VER=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
-# export SL_VER=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
-# export SL_VER=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
-# export SL_VER=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
 #
-# export SL_VER=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
-# export SL_VER=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
-# export SL_VER=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_VER=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_VER=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
 
 # переменные, которые должны быть определены перед запуском скрипта
-#export SL_KEY="sdfsdfsdfljlbjkljlkjsdfoiwje"
-#export SL_VER="v1"         - версия API: 'v2' (actual) или 'v1' (legacy)
+#export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
+#export SL_Ver="v1"         - версия API: 'v2' (actual) или 'v1' (legacy)
 #export SL_Expire=60        - время жизни token в минутах (0-1440), по-умолчанию: 60 минут
 #export SL_Login_ID=''      - id пользователя (не сервисного), например: 218200
 #export SL_Project_Name=''  - имя проекта, например: dns_t_mrovo_ru
@@ -41,8 +41,8 @@ dns_selectel_add() {
   if ! _sl_init_vars; then
     return 1
   fi
-  _debug2 SL_VER "$SL_VER"
-  _secure_debug3 SL_KEY "$SL_KEY"
+  _debug2 SL_Ver "$SL_Ver"
+  _secure_debug3 SL_Key "$SL_Key"
   _debug2 SL_Expire "$SL_Expire"
   _debug2 SL_Login_Name "$SL_Login_Name"
   _debug2 SL_Login_ID "$SL_Login_ID"
@@ -58,7 +58,7 @@ dns_selectel_add() {
   _debug _domain "$_domain"
 
   _info "Adding record"
-  if [ "$SL_VER" = "v2" ]; then
+  if [ "$SL_Ver" = "v2" ]; then
     _ext_srv1="/zones/"
     _ext_srv2="/rrset/"
     _text_tmp=$(echo "$txtvalue" | sed -En "s/[\"]*([^\"]*)/\1/p")
@@ -66,13 +66,13 @@ dns_selectel_add() {
     _text_tmp='\"'$_text_tmp'\"'
     _debug _text_tmp "$_text_tmp"
     _data="{\"type\": \"TXT\", \"ttl\": 60, \"name\": \"${fulldomain}.\", \"records\": [{\"content\":\"$_text_tmp\"}]}"
-  elif [ "$SL_VER" = "v1" ]; then
+  elif [ "$SL_Ver" = "v1" ]; then
     _ext_srv1="/"
     _ext_srv2="/records/"
     _data="{\"type\":\"TXT\",\"ttl\":60,\"name\":\"$fulldomain\",\"content\":\"$txtvalue\"}"
   else
     #not valid
-    _err "Error. Unsupported version API $SL_VER"
+    _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
   _ext_uri="${_ext_srv1}$_domain_id${_ext_srv2}"
@@ -85,7 +85,7 @@ dns_selectel_add() {
       return 0
     fi
     if _contains "$response" "already_exists"; then
-      if [ "$SL_VER" = "v2" ]; then
+      if [ "$SL_Ver" = "v2" ]; then
         # надо добавить к существующей записи еще один content
         # 1) найти и считать запись $fulldomain
         #     {
@@ -137,7 +137,7 @@ dns_selectel_add() {
           _info "Added, OK"
           return 0
         fi
-      elif [ "$SL_VER" = "v1" ]; then
+      elif [ "$SL_Ver" = "v1" ]; then
         _info "Added, OK"
         return 0
       fi
@@ -155,12 +155,12 @@ dns_selectel_rm() {
   # это не критично, т.к. вероятность такая очень мала
   fulldomain=$1
   txtvalue=$2
-  #SL_KEY="${SL_KEY:-$(_readaccountconf_mutable SL_KEY)}"
+  #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
   if ! _sl_init_vars "nosave"; then
     return 1
   fi
-  _debug2 SL_VER "$SL_VER"
-  _secure_debug3 SL_KEY "$SL_KEY"
+  _debug2 SL_Ver "$SL_Ver"
+  _secure_debug3 SL_Key "$SL_Key"
   _debug2 SL_Expire "$SL_Expire"
   _debug2 SL_Login_Name "$SL_Login_Name"
   _debug2 SL_Login_ID "$SL_Login_ID"
@@ -175,15 +175,15 @@ dns_selectel_rm() {
   _debug _sub_domain "$_sub_domain"
   _debug _domain "$_domain"
   #
-  if [ "$SL_VER" = "v2" ]; then
+  if [ "$SL_Ver" = "v2" ]; then
     _ext_srv1="/zones/"
     _ext_srv2="/rrset/"
-  elif [ "$SL_VER" = "v1" ]; then
+  elif [ "$SL_Ver" = "v1" ]; then
     _ext_srv1="/"
     _ext_srv2="/records/"
   else
     #not valid
-    _err "Error. Unsupported version API $SL_VER"
+    _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
   #
@@ -197,17 +197,17 @@ dns_selectel_rm() {
     return 1
   fi
   #
-  if [ "$SL_VER" = "v2" ]; then
+  if [ "$SL_Ver" = "v2" ]; then
     _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\1/gp")"
     _record_arr="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/p")"
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
-  elif [ "$SL_VER" = "v1" ]; then
+  elif [ "$SL_Ver" = "v1" ]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
     # record id
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   else
     #not valid
-    _err "Error. Unsupported version API $SL_VER"
+    _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
   _debug3 "_record_seg" "$_record_seg"
@@ -223,7 +223,7 @@ dns_selectel_rm() {
   fi
   _debug3 "_record_id" "$_record_id"
   # delete all record type TXT with text $txtvalue
-  if [ "$SL_VER" = "v2" ]; then
+  if [ "$SL_Ver" = "v2" ]; then
     # actual
     #del_txt='it47Qq60vJuzQJXb9WEaapciTwtt1gb_14gm1ubwzrA';
     _new_arr="$(echo "$_record_seg" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/gp" | sed -En "s/(\},\{)/}\n{/gp" | sed "/${txtvalue}/d" | sed ":a;N;s/\n/,/;ta")"
@@ -271,7 +271,7 @@ dns_selectel_rm() {
 _get_root() {
   domain=$1
   #
-  if [ "$SL_VER" = 'v1' ]; then
+  if [ "$SL_Ver" = 'v1' ]; then
     # version API 1
     if ! _sl_rest GET "/"; then
       return 1
@@ -293,7 +293,7 @@ _get_root() {
         _domain=$h
         _debug "Getting domain id for $h"
         if ! _sl_rest GET "/$h"; then
-          _err "Error read records of all domains $SL_VER"
+          _err "Error read records of all domains $SL_Ver"
           return 1
         fi
         _domain_id="$(echo "$response" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\":" | cut -d : -f 2)"
@@ -302,9 +302,9 @@ _get_root() {
       p=$i
       i=$(_math "$i" + 1)
     done
-    _err "Error read records of all domains $SL_VER"
+    _err "Error read records of all domains $SL_Ver"
     return 1
-  elif [ "$SL_VER" = "v2" ]; then
+  elif [ "$SL_Ver" = "v2" ]; then
     # version API 2
     _ext_uri='/zones/'
     domain="${domain}."
@@ -312,7 +312,7 @@ _get_root() {
     # read records of all domains
     if ! _sl_rest GET "$_ext_uri"; then
       #not valid
-      _err "Error read records of all domains $SL_VER"
+      _err "Error read records of all domains $SL_Ver"
       return 1
     fi
     i=2
@@ -340,11 +340,11 @@ _get_root() {
       i=$(_math "$i" + 1)
     done
     #not valid
-    _err "Error read records of all domains $SL_VER"
+    _err "Error read records of all domains $SL_Ver"
     return 1
   else
     #not valid
-    _err "Error. Unsupported version API $SL_VER"
+    _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
 }
@@ -362,22 +362,22 @@ _sl_rest() {
     _err "BAD key or token $ep"
     return 1
   fi
-  if [ "$SL_VER" = v2 ]; then
+  if [ "$SL_Ver" = v2 ]; then
     _h1_name="X-Auth-Token"
   else
     _h1_name='X-Token'
   fi
   export _H1="${_h1_name}: ${_token}"
   export _H2="Content-Type: application/json"
-  _debug3 "Full URI: " "$SL_Api/${SL_VER}${ep}"
+  _debug3 "Full URI: " "$SL_Api/${SL_Ver}${ep}"
   _debug3 "_H1:" "$_H1"
   _debug3 "_H2:" "$_H2"
 
   if [ "$m" != "GET" ]; then
     _debug data "$data"
-    response="$(_post "$data" "$SL_Api/${SL_VER}${ep}" "" "$m")"
+    response="$(_post "$data" "$SL_Api/${SL_Ver}${ep}" "" "$m")"
   else
-    response="$(_get "$SL_Api/${SL_VER}${ep}")"
+    response="$(_get "$SL_Api/${SL_Ver}${ep}")"
   fi
 
   if [ "$?" != "0" ]; then
@@ -391,11 +391,11 @@ _sl_rest() {
 #################################################################3
 # use:
 _get_auth_token() {
-  if [ "$SL_VER" = 'v1' ]; then
+  if [ "$SL_Ver" = 'v1' ]; then
     # token for v1
     _debug "Token v1"
-    _token_keystone=$SL_KEY
-  elif [ "$SL_VER" = 'v2' ]; then
+    _token_keystone=$SL_Key
+  elif [ "$SL_Ver" = 'v2' ]; then
     # token for v2. Get a token for calling the API
     _debug "Keystone Token v2"
     token_v2=$(_readaccountconf_mutable SL_Token_V2)
@@ -456,30 +456,30 @@ _sl_init_vars() {
 
   _debug "First init variables"
   # version API
-  SL_VER="${SL_VER:-$(_readaccountconf_mutable SL_VER)}"
-  if [ -z "$SL_VER" ]; then
-    SL_VER=""
+  SL_Ver="${SL_Ver:-$(_readaccountconf_mutable SL_Ver)}"
+  if [ -z "$SL_Ver" ]; then
+    SL_Ver=""
     _err "You don't specify selectel.ru API version yet."
     _err "Please specify you API version and try again."
     return 1
   fi
-  _debug2 SL_VER "$SL_VER"
+  _debug2 SL_Ver "$SL_Ver"
 
-  if [ "$SL_VER" = "v1" ]; then
+  if [ "$SL_Ver" = "v1" ]; then
     # token
-    SL_KEY="${SL_KEY:-$(_readaccountconf_mutable SL_KEY)}"
+    SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
 
-    if [ -z "$SL_KEY" ]; then
-      SL_KEY=""
+    if [ -z "$SL_Key" ]; then
+      SL_Key=""
       _err "You don't specify selectel.ru api key yet."
       _err "Please create you key and try again."
       return 1
     fi
     #save the api key to the account conf file.
     if [ -z "$_non_save" ]; then
-      _saveaccountconf_mutable SL_KEY "$SL_KEY"
+      _saveaccountconf_mutable SL_Key "$SL_Key"
     fi
-  elif [ "$SL_VER" = "v2" ]; then
+  elif [ "$SL_Ver" = "v2" ]; then
     # time expire token
     SL_Expire="${SL_Expire:-$(_readaccountconf_mutable SL_Expire)}"
     if [ -z "$SL_Expire" ]; then
@@ -533,14 +533,14 @@ _sl_init_vars() {
       _saveaccountconf_mutable SL_Pswd "$SL_Pswd" "12345678"
     fi
   else
-    SL_VER=""
+    SL_Ver=""
     _err "You also specified the wrong version of the selectel.ru API."
     _err "Please provide the correct API version and try again."
     return 1
   fi
 
   if [ -z "$_non_save" ]; then
-    _saveaccountconf_mutable SL_VER "$SL_VER"
+    _saveaccountconf_mutable SL_Ver "$SL_Ver"
   fi
 
   return 0
