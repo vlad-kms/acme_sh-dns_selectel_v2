@@ -1,28 +1,28 @@
-#!/usr/bin/sh
+#!/usr/bin/env sh
 
 # Протестировано (примеры):
 #   Исходные данные:
-#     dv1.ru - зарегистрированный домен в legacy v1
-#     t.dv2.ru - зарегистрированный домен в actual v2
-# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --domain-alias test11.dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --challenge-alias dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --dns dns_selectel
+#     intev.ru - зарегистрированный домен в legacy v1
+#     t.mrovo.ru - зарегистрированный домен в actual v2
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
+# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
 #
-# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d t.dv2.ru -d *.t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --challenge-alias t.dv2.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d dv1.ru -d *.dv1.ru --domain-alias ta1.t.dv2.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
+# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
 
-#
+# переменные, которые должны быть определены перед запуском скрипта
 #export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
-#export SL_Ver="v1"
-#export SL_Expire=60        - время жизни token в минутах, по-умолчанию: 60 минут
-#export SL_Login_name=''    - имя сервисного пользователя, например: dns
-#export SL_Login_ID=''      - id пользователя ( не сервисного), например: 218200
+#export SL_Ver="v1"         - версия API: 'v2' (actual) или 'v1' (legacy)
+#export SL_Expire=60        - время жизни token в минутах (0-1440), по-умолчанию: 60 минут
+#export SL_Login_ID=''      - id пользователя (не сервисного), например: 218200
 #export SL_Project_Name=''  - имя проекта, например: dns_t_mrovo_ru
+#export SL_Login_name=''    - имя сервисного пользователя, например: dns
 #export SL_Pswd='pswd'      - пароль сервисного пользователя, например: пароль
 #
 
@@ -122,12 +122,10 @@ dns_selectel_add() {
           return 0
         fi
         # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
-        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
+        _record_seg="$(echo "$response"   | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
         _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
         # record id
-        _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
-        # delete starts and ends '"'
-        _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
+        _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
         _tmp_str="${_record_array},{\"content\":\"${_text_tmp}\"}"
         _data="{\"ttl\": 60, \"records\": [${_tmp_str}]}"
         _debug3 _record_seg "$_record_seg"
@@ -157,7 +155,6 @@ dns_selectel_rm() {
   # это не критично, т.к. вероятность такая очень мала
   fulldomain=$1
   txtvalue=$2
-
   #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
   if ! _sl_init_vars "nosave"; then
     return 1
@@ -168,7 +165,7 @@ dns_selectel_rm() {
   _debug2 SL_Login_Name "$SL_Login_Name"
   _debug2 SL_Login_ID "$SL_Login_ID"
   _debug2 SL_Project_Name "$SL_Project_Name"
-
+  #
   _debug "First detect the root zone"
   if ! _get_root "$fulldomain"; then
     _err "invalid domain"
@@ -177,7 +174,7 @@ dns_selectel_rm() {
   _debug _domain_id "$_domain_id"
   _debug _sub_domain "$_sub_domain"
   _debug _domain "$_domain"
-
+  #
   if [ "$SL_Ver" = "v2" ]; then
     _ext_srv1="/zones/"
     _ext_srv2="/rrset/"
@@ -189,20 +186,20 @@ dns_selectel_rm() {
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
-
+  #
   _debug "Getting txt records"
   _ext_uri="${_ext_srv1}$_domain_id${_ext_srv2}"
   _debug3 _ext_uri "$_ext_uri"
   _sl_rest GET "${_ext_uri}"
-
+  #
   if ! _contains "$response" "$txtvalue"; then
     _err "Txt record not found"
     return 1
   fi
-
+  #
   if [ "$SL_Ver" = "v2" ]; then
-    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*${txtvalue}[^]]*\])[^}]*}).*/\1--\2/p")"
-    # record id
+    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\1/gp")"
+    _record_arr="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/p")"
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [ "$SL_Ver" = "v1" ]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
@@ -219,25 +216,49 @@ dns_selectel_rm() {
     return 1
   fi
   # record id
-  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
+  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
   if [ -z "$_record_id" ]; then
     _err "can not find _record_id"
     return 1
   fi
-  # delete starts and ends '"'
-  _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
   _debug3 "_record_id" "$_record_id"
-
   # delete all record type TXT with text $txtvalue
-  for _one_id in $_record_id; do
-    _del_uri="${_ext_uri}${_one_id}"
-    _debug2 _ext_uri "$_del_uri"
-    if ! _sl_rest DELETE "${_del_uri}"; then
-      _err "Delete record error: ${_del_uri}."
+  if [ "$SL_Ver" = "v2" ]; then
+    # actual
+    #del_txt='it47Qq60vJuzQJXb9WEaapciTwtt1gb_14gm1ubwzrA';
+    _new_arr="$(echo "$_record_seg" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/gp" | sed -En "s/(\},\{)/}\n{/gp" | sed "/${txtvalue}/d" | sed ":a;N;s/\n/,/;ta")"
+    # uri record for DEL or PATCH
+    _del_uri="${_ext_uri}${_record_id}"
+    if [ -z "$_new_arr" ]; then
+      # удалить запись
+      if ! _sl_rest DELETE "${_del_uri}"; then
+        _err "Delete record error: ${_del_uri}."
+      else
+        info "Delete record success: ${_del_uri}."
+      fi
     else
-      info "Delete record success: ${_del_uri}."
+      # обновить запись, удалив content
+      _data="{\"ttl\": 60, \"records\": [${_new_arr}]}"
+      _debug3 _data "$_data"
+      # вызов REST API PATCH
+      if _sl_rest PATCH "${_del_uri}" "$_data"; then
+        _info "Patched, OK: ${_del_uri}"
+      else
+        _err "Patched record error: ${_del_uri}."
+      fi
     fi
-  done
+  else
+    # legacy
+    for _one_id in $_record_id; do
+      _del_uri="${_ext_uri}${_one_id}"
+      _debug2 _ext_uri "$_del_uri"
+      if ! _sl_rest DELETE "${_del_uri}"; then
+        _err "Delete record error: ${_del_uri}."
+      else
+        info "Delete record success: ${_del_uri}."
+      fi
+    done
+  fi
   return 0
 }
 
@@ -249,7 +270,7 @@ dns_selectel_rm() {
 # _domain_id=sdjkglgdfewsdfg
 _get_root() {
   domain=$1
-
+  #
   if [ "$SL_Ver" = 'v1' ]; then
     # version API 1
     if ! _sl_rest GET "/"; then
@@ -413,7 +434,7 @@ _get_auth_token() {
       export _H1="Content-Type: application/json"
       # body  url [needbase64] [POST|PUT|DELETE] [ContentType]
       _result=$(_post "$_data_auth" "$auth_uri")
-      _token_keystone=$(cat "$HTTP_HEADER" | grep 'x-subject-token' | sed -nE "s/[[:space:]]*x-subject-token:[[:space:]]*([[:print:]]*)(\r*)/\1/p")
+      _token_keystone=$(grep 'x-subject-token' "$HTTP_HEADER" | sed -nE "s/[[:space:]]*x-subject-token:[[:space:]]*([[:print:]]*)(\r*)/\1/p")
       #echo $_token_keystone > /root/123456.qwe
       #_dt_curr=$EPOCHSECONDS
       _dt_curr=$(date +%s)
