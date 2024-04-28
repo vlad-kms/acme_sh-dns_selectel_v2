@@ -458,10 +458,11 @@ _sl_init_vars() {
   # version API
   SL_Ver="${SL_Ver:-$(_readaccountconf_mutable SL_Ver)}"
   if [ -z "$SL_Ver" ]; then
-    SL_Ver=""
-    _err "You don't specify selectel.ru API version yet."
-    _err "Please specify you API version and try again."
-    return 1
+    SL_Ver="v2"
+  fi
+  if ! [ "$SL_Ver" = "v1" ] && ! [ "$SL_Ver" = "v2" ]; then
+    _err "You don't specify selectel.ru API version."
+    _err "Please define specify API version."
   fi
   _debug2 SL_Ver "$SL_Ver"
 
@@ -523,6 +524,7 @@ _sl_init_vars() {
     fi
     # service user password
     SL_Pswd="${SL_Pswd:-$(_readaccountconf_mutable SL_Pswd)}"
+    #_secure_debug3 SL_Pswd "$SL_Pswd"
     if [ -z "$SL_Pswd" ]; then
       SL_Pswd=''
       _err "You did not specify the service user password."
