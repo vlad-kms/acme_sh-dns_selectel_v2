@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/env sh
 
 # Протестировано (примеры):
 #   Исходные данные:
@@ -122,12 +122,10 @@ dns_selectel_add() {
           return 0
         fi
         # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
-        _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
+        _record_seg="$(echo "$response"   | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
         _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
         # record id
-        _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
-        # delete starts and ends '"'
-        _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
+        _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
         _tmp_str="${_record_array},{\"content\":\"${_text_tmp}\"}"
         _data="{\"ttl\": 60, \"records\": [${_tmp_str}]}"
         _debug3 _record_seg "$_record_seg"
@@ -200,8 +198,8 @@ dns_selectel_rm() {
   fi
   #
   if [ "$SL_Ver" = "v2" ]; then
-    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[\{[^]]*${txtvalue}[^]]*\])[^}]*}).*/\1--\2/p")"
-    # record id
+    _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\1/gp")"
+    _record_arr="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/p")"
     #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [ "$SL_Ver" = "v1" ]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
@@ -218,24 +216,49 @@ dns_selectel_rm() {
     return 1
   fi
   # record id
-  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
+  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
   if [ -z "$_record_id" ]; then
     _err "can not find _record_id"
     return 1
   fi
-  # delete starts and ends '"'
-  _record_id="$(echo "${_record_id}" | sed -En "s/^[\"]*([^\"]*).*$/\1/p")"
   _debug3 "_record_id" "$_record_id"
   # delete all record type TXT with text $txtvalue
-  for _one_id in $_record_id; do
-    _del_uri="${_ext_uri}${_one_id}"
-    _debug2 _ext_uri "$_del_uri"
-    if ! _sl_rest DELETE "${_del_uri}"; then
-      _err "Delete record error: ${_del_uri}."
+  if [ "$SL_Ver" = "v2" ]; then
+    # actual
+    #del_txt='it47Qq60vJuzQJXb9WEaapciTwtt1gb_14gm1ubwzrA';
+    _new_arr="$(echo "$_record_seg" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/gp" | sed -En "s/(\},\{)/}\n{/gp" | sed "/${txtvalue}/d" | sed ":a;N;s/\n/,/;ta")"
+    # uri record for DEL or PATCH
+    _del_uri="${_ext_uri}${_record_id}"
+    if [ -z "$_new_arr" ]; then
+      # удалить запись
+      if ! _sl_rest DELETE "${_del_uri}"; then
+        _err "Delete record error: ${_del_uri}."
+      else
+        info "Delete record success: ${_del_uri}."
+      fi
     else
-      info "Delete record success: ${_del_uri}."
+      # обновить запись, удалив content
+      _data="{\"ttl\": 60, \"records\": [${_new_arr}]}"
+      _debug3 _data "$_data"
+      # вызов REST API PATCH
+      if _sl_rest PATCH "${_del_uri}" "$_data"; then
+        _info "Patched, OK: ${_del_uri}"
+      else
+        _err "Patched record error: ${_del_uri}."
+      fi
     fi
-  done
+  else
+    # legacy
+    for _one_id in $_record_id; do
+      _del_uri="${_ext_uri}${_one_id}"
+      _debug2 _ext_uri "$_del_uri"
+      if ! _sl_rest DELETE "${_del_uri}"; then
+        _err "Delete record error: ${_del_uri}."
+      else
+        info "Delete record success: ${_del_uri}."
+      fi
+    done
+  fi
   return 0
 }
 
@@ -411,7 +434,7 @@ _get_auth_token() {
       export _H1="Content-Type: application/json"
       # body  url [needbase64] [POST|PUT|DELETE] [ContentType]
       _result=$(_post "$_data_auth" "$auth_uri")
-      _token_keystone=$(cat "$HTTP_HEADER" | grep 'x-subject-token' | sed -nE "s/[[:space:]]*x-subject-token:[[:space:]]*([[:print:]]*)(\r*)/\1/p")
+      _token_keystone=$(grep 'x-subject-token' "$HTTP_HEADER" | sed -nE "s/[[:space:]]*x-subject-token:[[:space:]]*([[:print:]]*)(\r*)/\1/p")
       #echo $_token_keystone > /root/123456.qwe
       #_dt_curr=$EPOCHSECONDS
       _dt_curr=$(date +%s)
