@@ -22,7 +22,7 @@ For SL_Ver=v1 (legacy):
 For SL_Ver=v2 (actual):
 
     export SL_Login_ID=<id_user>
-    export SL_Login_Name=<login_selectel_tech_account>
+    export SL_Login_Name=<login_selectel_service_account>
     export SL_Project_Name=<project_name>
     export SL_Pswd=<text>
     export SL_Expire='180'
@@ -52,7 +52,7 @@ Details about variables:
         https://developers.selectel.ru/docs/cloud-services/dns_api/dns_api_actual/
         https://developers.selectel.ru/docs/control-panel/authorization/#%D1%82%D0%BE%D0%BA%D0%B5%D0%BD-keystone
 
-        export SL_Login_Name=<login_selectel_tech_account>
+        export SL_Login_Name=<login_selectel_service_account>
         export SL_Project_Name=<project_name>
         export SL_Pswd=<text>
         export SL_Login_ID=<id_user>
@@ -85,7 +85,7 @@ https://docs.selectel.ru/networks-services/dns/about-dns/
 Для v2 (actual)). Определили SL_Ver=v2:
 
     export SL_Login_ID=<id_user>
-    export SL_Login_Name=<login_selectel_tech_account>
+    export SL_Login_Name=<login_selectel_service_account>
     export SL_Project_Name=<project_name>
     export SL_Pswd=<text>
     export SL_Expire='180'
@@ -120,7 +120,7 @@ https://docs.selectel.ru/networks-services/dns/about-dns/
         https://developers.selectel.ru/docs/cloud-services/dns_api/dns_api_actual/
         https://developers.selectel.ru/docs/control-panel/authorization/#%D1%82%D0%BE%D0%BA%D0%B5%D0%BD-keystone
         
-        export SL_Login_Name=<login_selectel_tech_account>
+        export SL_Login_Name=<login_selectel_service_account>
         export SL_Project_Name=<project_name>
         export SL_Pswd=<text>
         export SL_Login_ID=<id_user>
