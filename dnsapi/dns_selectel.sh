@@ -136,10 +136,6 @@ dns_selectel_add() {
 
 #fulldomain txtvalue
 dns_selectel_rm() {
-  #TODO пока для версии v2 (actual) удаляет за один раз всю группу записи _acme-callenge.domain ($fulldomain)
-  #TODO т.е. если на другом сервере одновременно создал запись с таким же именем, то могут быть коллизии
-  #TODO надо реализовать удаление одной записи из records:[{content="\"text1\""},{content="\"text2\""},...]
-  # это не критично, т.к. вероятность такая очень мала
   fulldomain=$1
   txtvalue=$2
   #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
