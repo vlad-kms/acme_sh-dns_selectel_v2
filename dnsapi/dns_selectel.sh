@@ -17,14 +17,23 @@
 # export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
 
 # переменные, которые должны быть определены перед запуском скрипта
-#export SL_Key="sdfsdfsdfljlbjkljlkjsdfoiwje"
-#export SL_Ver="v1"         - версия API: 'v2' (actual) или 'v1' (legacy)
-#export SL_Expire=60        - время жизни token в минутах (0-1440), по-умолчанию: 60 минут
-#export SL_Login_ID=''      - id пользователя (не сервисного), например: 218200
-#export SL_Project_Name=''  - имя проекта, например: dns_t_mrovo_ru
-#export SL_Login_name=''    - имя сервисного пользователя, например: dns
-#export SL_Pswd='pswd'      - пароль сервисного пользователя, например: пароль
-#
+#   export SL_Ver="v1"                    - версия API: 'v2' (actual) или 'v1' (legacy).
+#                                           По-умолчанию: v2
+# Если SL_Ver="v1"
+#   export SL_Key="API_KEY"               - Токен Selectel (API key)
+#                                           Посмотреть или создать можно в панели управления в правом верхнем углу откройте меню Профиль и настройки -> Ключи API.
+#                                           https://my.selectel.ru/profile/apikeys
+# Если SL_Ver="v2"
+#   export SL_Expire=60                   - время жизни token в минутах (0-1440).
+#                                           По-умолчанию: 1400 минут
+#   export SL_Login_ID=<account_id>       - номер аккаунта в панели управления;
+#   export SL_Project_Name=<project_name> - имя проекта.
+#   export SL_Login_name=<username>       - имя сервисного пользователя. Посмотреть имя можно в панели управления:
+#                                           в правом верхнем углу откройте меню → Профиль и настройки → раздел Управление пользователями → вкладка Сервисные пользователи
+#   export SL_Pswd='pswd'                 - пароль сервисного пользователя, можно посмотреть при создании пользователя или изменить на новый.
+# Авторизация описана в:
+#   https://developers.selectel.ru/docs/control-panel/authorization/
+#   https://developers.selectel.com/docs/control-panel/authorization/
 
 SL_Api="https://api.selectel.ru/domains"
 auth_uri="https://cloud.api.selcloud.ru/identity/v3/auth/tokens"
@@ -85,35 +94,13 @@ dns_selectel_add() {
       return 0
     fi
     if _contains "$response" "already_exists"; then
+      # запись TXT с $fulldomain уже существует
       if [ "$SL_Ver" = "v2" ]; then
         # надо добавить к существующей записи еще один content
-        # 1) найти и считать запись $fulldomain
-        #     {
-        #       "id":"300223f5-0a37-49c5-a44e-5294108a93b4","name":"tt1.t.mrovo.ru.","ttl":3600,"type":"TXT",
-        #       "records":[
-        #         {"content":"\"text2\"","disabled":false},
-        #         {"content":"\"text1\"","disabled":false}
-        #       ],
-        #       "comment":null,"managed_by":null,"zone_id":"70d5d06b-1957-4e6c-ab3e-a31dd5cde10c"
-        #     }
-        # 2) добавить новую подзапись в нее
-        #     {
-        #       "id":"300223f5-0a37-49c5-a44e-5294108a93b4","name":"tt1.t.mrovo.ru.","ttl":3600,"type":"TXT",
-        #       "records":[
-        #         {"content":"\"text2\"","disabled":false},
-        #         {"content":"\"text1\"","disabled":false},
-        #         {"content":"\"${txtvalue}\"","disabled":false}
-        #       ],
-        #       "comment":null,"managed_by":null,"zone_id":"70d5d06b-1957-4e6c-ab3e-a31dd5cde10c"
-        #     }
-        # считали записи rrset
+        #
+        # считать записи rrset
         _debug "Getting txt records"
         _sl_rest GET "${_ext_uri}"
-        # проверить существование записи с именем $fulldomain. Вообще-то излишне, но вдруг
-        #if ! _contains "$response" "$fulldomain"; then
-        #  _err "Txt record ${fulldomain} not found"
-        #  return 1
-        #fi
         # Если в данной записи, есть текстовое значение $txtvalue,
         # то все хорошо, добавлять ничего не надо и результат успешный
         if _contains "$response" "$txtvalue"; then
