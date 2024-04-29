@@ -1,22 +1,6 @@
 #!/usr/bin/env sh
 
-# Протестировано (примеры):
-#   Исходные данные:
-#     intev.ru - зарегистрированный домен в legacy v1
-#     t.mrovo.ru - зарегистрированный домен в actual v2
-# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --domain-alias test11.intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --challenge-alias intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
-# export SL_Ver=v1; ./acme.sh --issue -d intev.ru -d *.intev.ru --dns dns_selectel
-#
-# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d t.mrovo.ru -d *.t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --challenge-alias t.mrovo.ru --dns dns_selectel
-# export SL_Ver=v2; ./acme.sh --issue -d intev.ru -d *.intev.ru --domain-alias ta1.t.mrovo.ru --dns dns_selectel
-
-# переменные, которые должны быть определены перед запуском скрипта
+# переменные, которые должны быть определены перед запуском
 #   export SL_Ver="v1"                    - версия API: 'v2' (actual) или 'v1' (legacy).
 #                                           По-умолчанию: v2
 # Если SL_Ver="v1"
@@ -31,6 +15,8 @@
 #   export SL_Login_name=<username>       - имя сервисного пользователя. Посмотреть имя можно в панели управления:
 #                                           в правом верхнем углу откройте меню → Профиль и настройки → раздел Управление пользователями → вкладка Сервисные пользователи
 #   export SL_Pswd='pswd'                 - пароль сервисного пользователя, можно посмотреть при создании пользователя или изменить на новый.
+# Все эти переменные будут сохранены ~/.acme.sh/account.conf  и будут использоваться повторно при необходимости.
+#
 # Авторизация описана в:
 #   https://developers.selectel.ru/docs/control-panel/authorization/
 #   https://developers.selectel.com/docs/control-panel/authorization/
