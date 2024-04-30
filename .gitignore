@@ -3,4 +3,5 @@
 !README.md
 !dnsapi
 !dnsapi/dns_selectel.sh
+!dnsapi/old_dns_selectel.sh
 !.gitattributes
