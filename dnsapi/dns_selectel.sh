@@ -2,7 +2,7 @@
 
 # переменные, которые должны быть определены перед запуском
 #   export SL_Ver="v1"                    - версия API: 'v2' (actual) или 'v1' (legacy).
-#                                           По-умолчанию: v2
+#                                           По-умолчанию: v1
 # Если SL_Ver="v1"
 #   export SL_Key="API_KEY"               - Токен Selectel (API key)
 #                                           Посмотреть или создать можно в панели управления в правом верхнем углу откройте меню Профиль и настройки -> Ключи API.
@@ -66,7 +66,6 @@ dns_selectel_add() {
     _ext_srv2="/records/"
     _data="{\"type\":\"TXT\",\"ttl\":60,\"name\":\"$fulldomain\",\"content\":\"$txtvalue\"}"
   else
-    #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
@@ -105,7 +104,6 @@ dns_selectel_add() {
         _debug3 _record_array "$_record_array"
         _debug3 _record_array "$_record_id"
         _debug3 _data "$_data"
-        # вызов REST API PATCH
         if _sl_rest PATCH "${_ext_uri}${_record_id}" "$_data"; then
           _info "Added, OK"
           return 0
@@ -124,7 +122,7 @@ dns_selectel_add() {
 dns_selectel_rm() {
   fulldomain=$1
   txtvalue=$2
-  #SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
+
   if ! _sl_init_vars "nosave"; then
     return 1
   fi
@@ -151,7 +149,6 @@ dns_selectel_rm() {
     _ext_srv1="/"
     _ext_srv2="/records/"
   else
-    #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
@@ -169,13 +166,9 @@ dns_selectel_rm() {
   if [ "$SL_Ver" = "v2" ]; then
     _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\1/gp")"
     _record_arr="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/p")"
-    #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   elif [ "$SL_Ver" = "v1" ]; then
     _record_seg="$(echo "$response" | _egrep_o "[^{]*\"content\" *: *\"$txtvalue\"[^}]*}")"
-    # record id
-    #_record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2)"
   else
-    #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
@@ -194,7 +187,6 @@ dns_selectel_rm() {
   # delete all record type TXT with text $txtvalue
   if [ "$SL_Ver" = "v2" ]; then
     # actual
-    #del_txt='it47Qq60vJuzQJXb9WEaapciTwtt1gb_14gm1ubwzrA';
     _new_arr="$(echo "$_record_seg" | sed -En "s/.*(\{\"id\"[^}]*records[^[]*(\[(\{[^]]*${txtvalue}[^]]*)\])[^}]*}).*/\3/gp" | sed -En "s/(\},\{)/}\n{/gp" | sed "/${txtvalue}/d" | sed ":a;N;s/\n/,/;ta")"
     # uri record for DEL or PATCH
     _del_uri="${_ext_uri}${_record_id}"
@@ -232,14 +224,10 @@ dns_selectel_rm() {
 }
 
 ####################  Private functions below ##################################
-#_acme-challenge.www.domain.com
-#returns
-# _sub_domain=_acme-challenge.www
-# _domain=domain.com
-# _domain_id=sdjkglgdfewsdfg
+
 _get_root() {
   domain=$1
-  #
+
   if [ "$SL_Ver" = 'v1' ]; then
     # version API 1
     if ! _sl_rest GET "/"; then
@@ -248,16 +236,12 @@ _get_root() {
     i=2
     p=1
     while true; do
-      #h=$(printf "%s" "$domain" | cut -d . -f $i-100)
       h=$(printf "%s" "$domain" | cut -d . -f "$i"-100)
       _debug h "$h"
       if [ -z "$h" ]; then
-        #not valid
         return 1
       fi
-
       if _contains "$response" "\"name\" *: *\"$h\","; then
-        #_sub_domain=$(printf "%s" "$domain" | cut -d . -f 1-$p)
         _sub_domain=$(printf "%s" "$domain" | cut -d . -f 1-"$p")
         _domain=$h
         _debug "Getting domain id for $h"
@@ -280,7 +264,6 @@ _get_root() {
     _debug "domain:: " "$domain"
     # read records of all domains
     if ! _sl_rest GET "$_ext_uri"; then
-      #not valid
       _err "Error read records of all domains $SL_Ver"
       return 1
     fi
@@ -290,29 +273,24 @@ _get_root() {
       h=$(printf "%s" "$domain" | cut -d . -f "$i"-100)
       _debug h "$h"
       if [ -z "$h" ]; then
-        #not valid
         _err "The domain was not found among the registered ones"
         return 1
       fi
-
       _domain_record=$(echo "$response" | sed -En "s/.*(\{[^}]*id[^}]*\"name\" *: *\"$h\"[^}]*}).*/\1/p")
       _debug "_domain_record:: " "$_domain_record"
       if [ -n "$_domain_record" ]; then
         _sub_domain=$(printf "%s" "$domain" | cut -d . -f 1-"$p")
         _domain=$h
         _debug "Getting domain id for $h"
-        #_domain_id="$(echo "$_domain_record" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\":" | cut -d : -f 2 | sed -En "s/\"([^\"]*)\"/\1\p")"
         _domain_id=$(echo "$_domain_record" | sed -En "s/\{[^}]*\"id\" *: *\"([^\"]*)\"[^}]*\}/\1/p")
         return 0
       fi
       p=$i
       i=$(_math "$i" + 1)
     done
-    #not valid
     _err "Error read records of all domains $SL_Ver"
     return 1
   else
-    #not valid
     _err "Error. Unsupported version API $SL_Ver"
     return 1
   fi
@@ -341,14 +319,12 @@ _sl_rest() {
   _debug3 "Full URI: " "$SL_Api/${SL_Ver}${ep}"
   _debug3 "_H1:" "$_H1"
   _debug3 "_H2:" "$_H2"
-
   if [ "$m" != "GET" ]; then
     _debug data "$data"
     response="$(_post "$data" "$SL_Api/${SL_Ver}${ep}" "" "$m")"
   else
     response="$(_get "$SL_Api/${SL_Ver}${ep}")"
   fi
-
   if [ "$?" != "0" ]; then
     _err "error $ep"
     return 1
@@ -357,8 +333,6 @@ _sl_rest() {
   return 0
 }
 
-#################################################################3
-# use:
 _get_auth_token() {
   if [ "$SL_Ver" = 'v1' ]; then
     # token for v1
@@ -375,7 +349,7 @@ _get_auth_token() {
       # field 3 - SL_Login_ID
       # field 4 - SL_Project_Name
       # field 5 - Receipt time
-      # separator - ';'
+      # separator - '$_sl_sep'
       _login_name=$(_getfield "$token_v2" 1 "$_sl_sep")
       _token_keystone=$(_getfield "$token_v2" 2 "$_sl_sep")
       _project_name=$(_getfield "$token_v2" 4 "$_sl_sep")
@@ -386,7 +360,6 @@ _get_auth_token() {
       _debug3 _project_name "$_project_name"
       _debug3 _receipt_time "$(date -d @"$_receipt_time" -u)"
       # check the validity of the token for the user and the project and its lifetime
-      #_dt_diff_minute=$(( ( $(EPOCHSECONDS)-$_receipt_time )/60 ))
       _dt_diff_minute=$((($(date +%s) - _receipt_time) / 60))
       _debug3 _dt_diff_minute "$_dt_diff_minute"
       [ "$_dt_diff_minute" -gt "$SL_Expire" ] && unset _token_keystone
@@ -399,13 +372,9 @@ _get_auth_token() {
       # the previous token is incorrect or was not received, get a new one
       _debug "Update (get new) token"
       _data_auth="{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"name\":\"${SL_Login_Name}\",\"domain\":{\"name\":\"${SL_Login_ID}\"},\"password\":\"${SL_Pswd}\"}}},\"scope\":{\"project\":{\"name\":\"${SL_Project_Name}\",\"domain\":{\"name\":\"${SL_Login_ID}\"}}}}}"
-      #_secure_debug2 "_data_auth" "$_data_auth"
       export _H1="Content-Type: application/json"
-      # body  url [needbase64] [POST|PUT|DELETE] [ContentType]
       _result=$(_post "$_data_auth" "$auth_uri")
       _token_keystone=$(grep 'x-subject-token' "$HTTP_HEADER" | sed -nE "s/[[:space:]]*x-subject-token:[[:space:]]*([[:print:]]*)(\r*)/\1/p")
-      #echo $_token_keystone > /root/123456.qwe
-      #_dt_curr=$EPOCHSECONDS
       _dt_curr=$(date +%s)
       SL_Token_V2="${SL_Login_Name}${_sl_sep}${_token_keystone}${_sl_sep}${SL_Login_ID}${_sl_sep}${SL_Project_Name}${_sl_sep}${_dt_curr}"
       _saveaccountconf_mutable SL_Token_V2 "$SL_Token_V2"
@@ -434,7 +403,6 @@ _sl_init_vars() {
     _err "Please define specify API version."
   fi
   _debug2 SL_Ver "$SL_Ver"
-
   if [ "$SL_Ver" = "v1" ]; then
     # token
     SL_Key="${SL_Key:-$(_readaccountconf_mutable SL_Key)}"
@@ -509,7 +477,6 @@ _sl_init_vars() {
     _err "Please provide the correct API version and try again."
     return 1
   fi
-
   if [ -z "$_non_save" ]; then
     _saveaccountconf_mutable SL_Ver "$SL_Ver"
   fi
