@@ -4,7 +4,7 @@
 #   export SL_Ver="v1"                    - версия API: 'v2' (actual) или 'v1' (legacy).
 #                                           По-умолчанию: v1
 # Если SL_Ver="v1"
-#   export SL_Key="API_KEY"               - Токен Selectel (API key)
+#   export SL_Key="API_Key"               - Токен Selectel (API key)
 #                                           Посмотреть или создать можно в панели управления в правом верхнем углу откройте меню Профиль и настройки -> Ключи API.
 #                                           https://my.selectel.ru/profile/apikeys
 # Если SL_Ver="v2"
