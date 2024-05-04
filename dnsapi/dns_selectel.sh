@@ -32,7 +32,6 @@ dns_selectel_add() {
   fulldomain=$1
   txtvalue=$2
 
-  #if ! _sl_init_vars; then
   if ! _sl_init_vars; then
     return 1
   fi
@@ -82,28 +81,27 @@ dns_selectel_add() {
       # запись TXT с $fulldomain уже существует
       if [ "$SL_Ver" = "v2" ]; then
         # надо добавить к существующей записи еще один content
-        #
         # считать записи rrset
         _debug "Getting txt records"
         _sl_rest GET "${_ext_uri}"
-        # Если в данной записи, есть текстовое значение $txtvalue,
-        # то все хорошо, добавлять ничего не надо и результат успешный
+        # Уже есть значение $txtvalue, добавлять не надо
         if _contains "$response" "$txtvalue"; then
           _info "Added, OK"
           _info "Txt record ${fulldomain} со значением ${txtvalue} already exists"
           return 0
         fi
-        # группа \1 - полная запись rrset; группа \2 - значение records:[{"content":"\"v1\""},{"content":"\"v2\""}",...], а именно {"content":"\"v1\""},{"content":"\"v2\""}",...
+        # группа \1 - полная запись rrset; группа \2 - значение атрибута records, а именно {"content":"\"value1\""},{"content":"\"value2\""}",...
         _record_seg="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\1/p")"
         _record_array="$(echo "$response" | sed -En "s/.*(\{\"id\"[^}]*${fulldomain}[^}]*records[^}]*\[(\{[^]]*\})\][^}]*}).*/\2/p")"
         # record id
         _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
+        # готовим _data
         _tmp_str="${_record_array},{\"content\":\"${_text_tmp}\"}"
         _data="{\"ttl\": 60, \"records\": [${_tmp_str}]}"
         _debug3 _record_seg "$_record_seg"
         _debug3 _record_array "$_record_array"
         _debug3 _record_array "$_record_id"
-        _debug3 _data "$_data"
+        _debug2 "New data for record" "$_data"
         if _sl_rest PATCH "${_ext_uri}${_record_id}" "$_data"; then
           _info "Added, OK"
           return 0
@@ -178,7 +176,7 @@ dns_selectel_rm() {
     return 1
   fi
   # record id
-  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"")"
+  _record_id="$(echo "$_record_seg" | tr "," "\n" | tr "}" "\n" | tr -d " " | grep "\"id\"" | cut -d : -f 2 | tr -d "\"" | sed '1!d')"
   if [ -z "$_record_id" ]; then
     _err "can not find _record_id"
     return 1
