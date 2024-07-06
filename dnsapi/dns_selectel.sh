@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+#!/usr/bin/env sh
 
 # Variables that must be defined before running
 #   export SL_Ver="v1"                    - version API: 'v2' (actual) or 'v1' (legacy).
@@ -356,7 +357,7 @@ _get_auth_token() {
       _debug3 _login_name "$_login_name"
       _debug3 _login_id "$_login_id"
       _debug3 _project_name "$_project_name"
-      _debug3 _receipt_time "$(date -d @"$_receipt_time" -u)"
+      # _debug3 _receipt_time "$(date -d @"$_receipt_time" -u)"
       # check the validity of the token for the user and the project and its lifetime
       _dt_diff_minute=$((($(date +%s) - _receipt_time) / 60))
       _debug3 _dt_diff_minute "$_dt_diff_minute"
