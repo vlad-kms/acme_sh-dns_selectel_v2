@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-#!/usr/bin/env sh
 
 # Variables that must be defined before running
 #   export SL_Ver="v1"                    - version API: 'v2' (actual) or 'v1' (legacy).
