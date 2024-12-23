@@ -324,6 +324,7 @@ _sl_rest() {
   else
     response="$(_get "$SL_Api/${SL_Ver}${ep}")"
   fi
+  # shellcheck disable=SC2181
   if [ "$?" != "0" ]; then
     _err "error $ep"
     return 1
