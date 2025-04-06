@@ -1,8 +1,26 @@
-#### Теперь ДНС провайдер Selectel имеет две версии API actual (v2) и legacy (v1).
+#### DNS hosting from the Selectel provider has switched to using the actual (v2) API version. Legacy v1 has been closed
+#### Details: https://docs.selectel.ru/networks-services/dns/about-dns/
+
+Description.
+
+Changes to this project have been officially added to asme.sh: https://github.com/acmesh-official/acme.sh
+(https://github.com/acmesh-official/acme.sh/pull/5128)
+Now all questions and changes are there.
+
+---
+#### DNS hosting от провайдера Selectel перешел к использованиию версии API actual (v2). Legacy v1 закрыли
 #### Подробно: https://docs.selectel.ru/networks-services/dns/about-dns/
 
 Описание.
+
+Изменения этого проекта внесены официально в asme.sh: https://github.com/acmesh-official/acme.sh
+(https://github.com/acmesh-official/acme.sh/pull/5128)
+Теперь все вопросы и изменения там.
+
 ---
+---
+## Deprecated. Do not use.
+
 Подерживается две версии API: v1 (legacy) и v2 (actual):
 
 https://docs.selectel.ru/networks-services/dns/about-dns/
@@ -19,7 +37,7 @@ v1 является значением по-умолчанию, если не о
 Для SL_Ver=v1 (legacy) надо определить следующие переменные:
 
     export SL_Key=<API_Key_SELECTEL>
-    
+
 Для SL_Ver=v2 (actual) надо определить следующие переменные:
 
     export SL_Login_ID=<id_user>
